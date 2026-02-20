@@ -17,7 +17,7 @@ router.get('/data', async (req, res) => {
         
         // Get current store rotation
         const storeCards = await all(
-            'SELECT card_name FROM store_rotation WHERE user_id = ? AND DATE(rotation_date) = DATE("now")',
+            'SELECT card_name FROM store_rotation WHERE user_id = ? AND DATE(rotation_date) = CURRENT_DATE',
             [userId]
         );
 
