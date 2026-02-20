@@ -21,7 +21,12 @@ const app = express();
 app.use(helmet({
     contentSecurityPolicy: false, // Disable CSP for local development
 }));
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins (Electron uses file://)
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Rate limiting
