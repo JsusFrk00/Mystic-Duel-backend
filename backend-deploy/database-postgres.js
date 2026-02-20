@@ -168,6 +168,16 @@ async function initializeDatabase() {
             )
         `);
 
+// Card market values table (for trading)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS card_market_values (
+                card_name TEXT PRIMARY KEY,
+                base_price INTEGER NOT NULL,
+                current_market_value INTEGER NOT NULL,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
         // Used cards in store
         await client.query(`
             CREATE TABLE IF NOT EXISTS store_used_cards (
