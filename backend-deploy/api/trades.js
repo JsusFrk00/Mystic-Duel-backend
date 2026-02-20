@@ -90,11 +90,11 @@ router.get('/listings', async (req, res) => {
                 tl.created_at,
                 tl.expires_at,
                 (SELECT COUNT(*) FROM trade_listing_offers WHERE listing_id = tl.id) as offered_count,
-                (SELECT GROUP_CONCAT(card_name) FROM trade_listing_requests WHERE listing_id = tl.id) as requested_cards
+                (SELECT STRING_AGG(card_name, ',') FROM trade_listing_requests WHERE listing_id = tl.id) as requested_cards
             FROM trade_listings tl
             WHERE tl.status = 'open'
             AND tl.posted_by_user_id != ?
-            AND tl.expires_at > datetime('now')
+            AND tl.expires_at > NOW()
             ORDER BY tl.created_at DESC
         `, [userId]);
 
@@ -388,7 +388,7 @@ router.post('/accept-listing/:id', async (req, res) => {
                 await run(`
                     UPDATE card_instances
                     SET user_id = ?,
-                        previous_owners = json_insert(previous_owners, '$[#]', (SELECT username FROM users WHERE id = ?))
+                        previous_owners = COALESCE(previous_owners, '[]'::jsonb) || jsonb_build_array((SELECT username FROM users WHERE id = ?))
                     WHERE id = ?
                 `, [userId, listing.posted_by_user_id, offer.card_instance_id]);
             }
@@ -398,7 +398,7 @@ router.post('/accept-listing/:id', async (req, res) => {
                 await run(`
                     UPDATE card_instances
                     SET user_id = ?,
-                        previous_owners = json_insert(previous_owners, '$[#]', (SELECT username FROM users WHERE id = ?))
+                        previous_owners = COALESCE(previous_owners, '[]'::jsonb) || jsonb_build_array((SELECT username FROM users WHERE id = ?))
                     WHERE id = ?
                 `, [listing.posted_by_user_id, userId, cardId]);
             }
@@ -683,7 +683,7 @@ router.post('/accept-counter/:responseId', async (req, res) => {
                 await run(`
                     UPDATE card_instances
                     SET user_id = ?,
-                        previous_owners = json_insert(previous_owners, '$[#]', (SELECT username FROM users WHERE id = ?))
+                        previous_owners = COALESCE(previous_owners, '[]'::jsonb) || jsonb_build_array((SELECT username FROM users WHERE id = ?))
                     WHERE id = ?
                 `, [response.responder_user_id, userId, offer.card_instance_id]);
             }
@@ -693,7 +693,7 @@ router.post('/accept-counter/:responseId', async (req, res) => {
                 await run(`
                     UPDATE card_instances
                     SET user_id = ?,
-                        previous_owners = json_insert(previous_owners, '$[#]', (SELECT username FROM users WHERE id = ?))
+                        previous_owners = COALESCE(previous_owners, '[]'::jsonb) || jsonb_build_array((SELECT username FROM users WHERE id = ?))
                     WHERE id = ?
                 `, [userId, response.responder_user_id, offer.card_instance_id]);
             }
