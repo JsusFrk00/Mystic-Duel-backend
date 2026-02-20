@@ -197,7 +197,7 @@ const dbHelpers = {
     run: async (sql, params = []) => {
         // Convert ? placeholders to $1, $2, etc.
         let paramIndex = 1;
-        const pgSql = sql.replace(/\?/g, () => `${paramIndex++}`);
+        const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
         
         const result = await pool.query(pgSql, params);
         
