@@ -316,7 +316,7 @@ router.get('/used-cards', async (req, res) => {
                 COUNT(*) as quantity,
                 MIN(suc.base_list_price) as base_list_price,
                 MIN(suc.listed_at) as oldest_listing,
-                GROUP_CONCAT(suc.id) as listing_ids
+                STRING_AGG(suc.id::text, ',') as listing_ids
             FROM store_used_cards suc
             GROUP BY suc.card_name, suc.art_variant
             ORDER BY suc.card_name
