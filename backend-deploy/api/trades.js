@@ -959,7 +959,7 @@ router.get('/market-values', async (req, res) => {
         const count = await get('SELECT COUNT(*) as count FROM card_market_values');
         console.log('[Market] Current market value count:', count);
         
-        if (count && count.count === 0) {
+        if (!count || parseInt(count.count) === 0) {
             console.log('[Market] Table empty! Seeding initial market values...');
             const ALL_CARDS = require('./cards-data').ALL_CARDS;
             const CARD_PRICES = require('./cards-data').CARD_PRICES;
