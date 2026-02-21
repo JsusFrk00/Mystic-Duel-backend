@@ -267,9 +267,9 @@ router.post('/create-listing', async (req, res) => {
 
         // Create listing (PostgreSQL needs RETURNING to get ID)
         const result = await run(`
-            INSERT INTO trade_listings (posted_by_user_id, status)
-            VALUES (?, 'open')
-            RETURNING id
+            INSERT INTO trade_listings (posted_by_user_id, status, expires_at)
+VALUES (?, 'open', NOW() + INTERVAL '7 days')
+RETURNING id
         `, [userId]);
 
         const listingId = result.id;
