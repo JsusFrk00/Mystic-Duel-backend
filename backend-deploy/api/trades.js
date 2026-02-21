@@ -953,12 +953,14 @@ router.get('/history', async (req, res) => {
 
 // Get market values
 router.get('/market-values', async (req, res) => {
-   try {
+  try {
         // Initialize market values if empty (first time)
+        console.log('[Market] Checking if market values need seeding...');
         const count = await get('SELECT COUNT(*) as count FROM card_market_values');
+        console.log('[Market] Current market value count:', count);
         
         if (count && count.count === 0) {
-            console.log('[Market] Seeding initial market values...');
+            console.log('[Market] Table empty! Seeding initial market values...');
             const ALL_CARDS = require('./cards-data').ALL_CARDS;
             const CARD_PRICES = require('./cards-data').CARD_PRICES;
             
@@ -971,21 +973,10 @@ router.get('/market-values', async (req, res) => {
                     );
                 }
             }
-            console.log('[Market] Seeded market values');
+            console.log('[Market] Seeded market values for all cards!');
+        } else {
+            console.log('[Market] Market values already exist, count:', count ? count.count : 'null');
         }
-        
-        const values = await all(`
-            SELECT 
-                card_name,
-                base_price,
-                current_market_value,
-                trade_count_30d,
-                last_updated
-            FROM card_market_values
-            ORDER BY card_name
-        `);
-
-        res.json({ market_values: values });
 
     } catch (error) {
         console.error('Error fetching market values:', error);
