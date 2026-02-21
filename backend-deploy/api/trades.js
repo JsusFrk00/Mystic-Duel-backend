@@ -953,7 +953,27 @@ router.get('/history', async (req, res) => {
 
 // Get market values
 router.get('/market-values', async (req, res) => {
-    try {
+   try {
+        // Initialize market values if empty (first time)
+        const count = await get('SELECT COUNT(*) as count FROM card_market_values');
+        
+        if (count && count.count === 0) {
+            console.log('[Market] Seeding initial market values...');
+            const ALL_CARDS = require('./cards-data').ALL_CARDS;
+            const CARD_PRICES = require('./cards-data').CARD_PRICES;
+            
+            for (const card of ALL_CARDS) {
+                if (card.variant !== 'Full Art') {
+                    const basePrice = CARD_PRICES[card.rarity] || 50;
+                    await run(
+                        'INSERT INTO card_market_values (card_name, base_price, current_market_value, trade_count_30d) VALUES (?, ?, ?, 0)',
+                        [card.name, basePrice, basePrice]
+                    );
+                }
+            }
+            console.log('[Market] Seeded market values');
+        }
+        
         const values = await all(`
             SELECT 
                 card_name,
