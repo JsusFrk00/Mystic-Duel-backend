@@ -310,7 +310,7 @@ router.post('/accept-listing/:id', async (req, res) => {
         const listingId = parseInt(req.params.id);
         const { cardInstanceIds } = req.body;
 
-        await beginTransaction();
+        const client = await beginTransaction();
 
         try {
             // Get listing
@@ -320,13 +320,13 @@ router.post('/accept-listing/:id', async (req, res) => {
             `, [listingId]);
 
             if (!listing) {
-                await rollback();
+                await rollback(client);
                 return res.status(404).json({ error: 'Listing not found or already completed' });
             }
 
             // Cannot accept own listing
             if (listing.posted_by_user_id === userId) {
-                await rollback();
+                await rollback(client);
                 return res.status(400).json({ error: 'Cannot accept your own listing' });
             }
 
@@ -346,7 +346,7 @@ router.post('/accept-listing/:id', async (req, res) => {
                 );
 
                 if (!card || card.user_id !== userId) {
-                    await rollback();
+                    await rollback(client);
                     return res.status(403).json({ error: 'You do not own all provided cards' });
                 }
 
@@ -356,7 +356,7 @@ router.post('/accept-listing/:id', async (req, res) => {
             // Check if provided matches requested
             for (const req of requestedCards) {
                 if (!providedCards[req.card_name] || providedCards[req.card_name] < req.quantity) {
-                    await rollback();
+                    await rollback(client);
                     return res.status(400).json({ 
                         error: `Missing required card: ${req.card_name} x${req.quantity}` 
                     });
@@ -378,7 +378,7 @@ router.post('/accept-listing/:id', async (req, res) => {
                 );
 
                 if (!card || card.user_id !== listing.posted_by_user_id) {
-                    await rollback();
+                    await rollback(client);
                     return res.status(400).json({ error: 'Poster no longer owns offered cards' });
                 }
             }
@@ -518,7 +518,7 @@ router.post('/accept-listing/:id', async (req, res) => {
                 `${accepterUsername.username} accepted your trade offer!`
             );
 
-            await commit();
+            await commit(client);
 
             console.log(`✅ Trade completed: listing ${listingId}`);
 
@@ -528,7 +528,7 @@ router.post('/accept-listing/:id', async (req, res) => {
             });
 
         } catch (error) {
-            await rollback();
+            await rollback(client);
             throw error;
         }
 
@@ -616,7 +616,7 @@ router.post('/accept-counter/:responseId', async (req, res) => {
         const userId = req.userId;
         const responseId = parseInt(req.params.responseId);
 
-        await beginTransaction();
+        const client = await beginTransaction();
 
         try {
             // Get counter-offer
@@ -628,13 +628,13 @@ router.post('/accept-counter/:responseId', async (req, res) => {
             `, [responseId]);
 
             if (!response) {
-                await rollback();
+                await rollback(client);
                 return res.status(404).json({ error: 'Counter-offer not found' });
             }
 
             // Verify you own the listing
             if (response.posted_by_user_id !== userId) {
-                await rollback();
+                await rollback(client);
                 return res.status(403).json({ error: 'Not your listing' });
             }
 
@@ -653,7 +653,7 @@ router.post('/accept-counter/:responseId', async (req, res) => {
                 );
 
                 if (!card || card.user_id !== userId) {
-                    await rollback();
+                    await rollback(client);
                     return res.status(400).json({ error: 'You no longer own offered cards' });
                 }
             }
@@ -673,7 +673,7 @@ router.post('/accept-counter/:responseId', async (req, res) => {
                 );
 
                 if (!card || card.user_id !== response.responder_user_id) {
-                    await rollback();
+                    await rollback(client);
                     return res.status(400).json({ error: 'Responder no longer owns offered cards' });
                 }
             }
@@ -804,7 +804,7 @@ router.post('/accept-counter/:responseId', async (req, res) => {
                 'Your counter-offer was accepted!'
             );
 
-            await commit();
+            await commit(client);
 
             console.log(`✅ Counter-offer ${responseId} accepted`);
 
@@ -814,7 +814,7 @@ router.post('/accept-counter/:responseId', async (req, res) => {
             });
 
         } catch (error) {
-            await rollback();
+            await rollback(client);
             throw error;
         }
 
