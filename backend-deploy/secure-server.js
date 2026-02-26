@@ -231,47 +231,38 @@ io.on('connection', (socket) => {
     });
     
     // Game actions (deck selection, turns, etc.)
+    // Game actions (deck selection, turns, etc.)
     socket.on('gameAction', (data) => {
-        // Log action without full deck array
-        const deckInfo = data.deck ? `${data.deck.length} cards` : 'no deck';
-        console.log('🎮 Game action:', data.action, 'from', socket.id, '-', deckInfo);
-        
+        // FIXED: Don't log data object (has 30-card array)
         if (data.action === 'deckSelected') {
-            console.log('  Processing deck selection, active games:', activeGames.size);
+            console.log('🎮 deckSelected from', socket.id);
             
             // Find the game this player is in
-            let foundGame = false;
             activeGames.forEach((game, gameId) => {
                 if (game.player1.id === socket.id || game.player2.id === socket.id) {
-                    foundGame = true;
-                    console.log('  Found game:', gameId);
                     const isPlayer1 = game.player1.id === socket.id;
                     
-                    // Store deck selection
-                    const deckSize = Array.isArray(data.deck) ? data.deck.length : 'unknown';
-                    
+                    // Store deck
                     if (isPlayer1) {
                         game.player1.deck = data.deck;
                         game.player1.ready = true;
-                        console.log('  ✅ Player 1 deck selected:', deckSize, 'cards');
+                        console.log('  ✅ P1 ready, deck:', data.deck.length, 'cards');
                     } else {
                         game.player2.deck = data.deck;
                         game.player2.ready = true;
-                        console.log('  ✅ Player 2 deck selected:', deckSize, 'cards');
+                        console.log('  ✅ P2 ready, deck:', data.deck.length, 'cards');
                     }
                     
-                    console.log('  Game state - P1 ready:', game.player1.ready, 'P2 ready:', game.player2.ready);
+                    console.log('  STATUS: P1 ready:', game.player1.ready, '| P2 ready:', game.player2.ready);
                     
                     // Notify opponent
                     const opponent = isPlayer1 ? game.player2 : game.player1;
                     opponent.socket.emit('opponentReady');
-                    console.log('  Sent opponentReady to', opponent.id);
                     
-                    // If both ready, start game
+                    // Both ready?
                     if (game.player1.ready && game.player2.ready) {
-                        console.log('✅ Both players ready! Starting game:', gameId);
+                        console.log('✅✅✅ BOTH READY! STARTING GAME:', gameId);
                         
-                        // Emit as gameAction with type: gameStart (what frontend expects)
                         io.to(gameId).emit('gameAction', {
                             type: 'gameStart',
                             gameStarted: true,
@@ -282,13 +273,9 @@ io.on('connection', (socket) => {
                     }
                 }
             });
-            
-            if (!foundGame) {
-                console.log('  ❌ ERROR: Could not find game for player', socket.id);
-                console.log('  Active games:', Array.from(activeGames.keys()));
-            }
         } else {
-            // Forward other actions to opponent
+            // Forward other actions
+            console.log('🎮 Forwarding action:', data.action, 'from', socket.id);
             activeGames.forEach((game, gameId) => {
                 if (game.player1.id === socket.id || game.player2.id === socket.id) {
                     const opponent = game.player1.id === socket.id ? game.player2 : game.player1;
